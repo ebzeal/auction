@@ -1,8 +1,5 @@
 import AWS from 'aws-sdk';
-import middy from '@middy/core';
-import httpJsonBodyParser from '@middy/http-json-body-parser';
-import httpEventNormalizer from '@middy/http-event-normalizer';
-import httpErrorHandler from "@middy/http-error-handler";
+import commonMiddleware from '../lib/commonMiddleware';
 import createError from 'http-errors';
 
 
@@ -28,9 +25,4 @@ async function getAuctions(event, context) {
   };
 }
 
-export const handler = middy(getAuctions)
-  .use(httpJsonBodyParser())    // this parses our strings in the body hence we can remove JSON.parse from event.body
-  .use(httpEventNormalizer())  // it will prevent us from having none existing objects to reduce errors and if statements
-  .use(httpErrorHandler());  // helps handle our errors
-
-
+export const handler = commonMiddleware(getAuctions);
