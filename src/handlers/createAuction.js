@@ -14,7 +14,7 @@ const auction = {
   createdAt: now.toISOString(),
 };
 
-dynamodb.put({
+await dynamodb.put({
   TableName: 'AuctionsTable',
   Item: auction,
 }).promise();
