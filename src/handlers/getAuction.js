@@ -1,4 +1,3 @@
-import {v4 as uuid} from 'uuid';
 import AWS from 'aws-sdk';
 import middy from '@middy/core';
 import httpJsonBodyParser from '@middy/http-json-body-parser';
@@ -9,35 +8,33 @@ import createError from 'http-errors';
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-async function createAuction(event, context) {
-  const {title} = event.body;
-  const now = new Date();
+async function getAuction(event, context) {
+ let auction;
+ const { id } = event.pathParameters;
 
-const auction = {
-  id: uuid(),
-  title,
-  status: 'OPEN',
-  createdAt: now.toISOString(),
-};
+ try {
+   const result = await dynamodb.get({
+     TableName: process.env.AUCTIONS_TABLE_NAME,
+     Key: { id }
+   }).promise();
 
-try {
-  await dynamodb.put({
-    TableName: process.env.AUCTIONS_TABLE_NAME,
-    Item: auction,
-  }).promise();
-} catch (error) {
-console.log("🚀 ~ file: createAuction.js ~ line 29 ~ createAuction ~ error", error);
-  throw new createError.InternalServerError(error);
-}
+   auction = result.Item;
+ } catch (error) {
+ console.log("🚀 ~ file: getAuction.js ~ line 17 ~ getAuction ~ error", error);
+   throw new createError.InternalServerError(error);
+ }
 
+ if(!auction) {
+   throw new createError.NotFound(`Auction with ID "${id}" not found`);
+ }
 
   return {
-    statusCode: 201,
+    statusCode: 200,
     body: JSON.stringify({ auction }),
   };
 }
 
-export const handler = middy(createAuction)
+export const handler = middy(getAuction)
   .use(httpJsonBodyParser())    // this parses our strings in the body hence we can remove JSON.parse from event.body
   .use(httpEventNormalizer())  // it will prevent us from having none existing objects to reduce errors and if statements
   .use(httpErrorHandler());  // helps handle our errors
